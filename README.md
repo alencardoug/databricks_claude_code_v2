@@ -175,11 +175,9 @@ Produção é publicada **só pela esteira**.
 - Dados estáticos de exemplo. A pipeline não tem agendamento, porque a fonte não muda.
 - dev e prod no mesmo workspace (Free Edition), isolados apenas por catálogo.
 - Ainda não há testes automatizados das transformações na esteira.
-- As actions da esteira emitem aviso de Node.js 20 obsoleto.
 
 ## Próximos passos
 
-- Atualizar as actions da esteira.
 - Agendar a pipeline de produção, com alertas sobre as métricas de qualidade.
 - Adicionar testes das transformações à esteira.
 - Cruzar sentimento com desempenho de vendas por franquia.
