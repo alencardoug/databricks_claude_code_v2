@@ -6,6 +6,9 @@ O cenário é uma rede de padarias com **48 franquias em 9 países**. A gestão 
 
 > Projeto desenvolvido com IA agêntica (Claude Code) a partir de uma especificação com regras explícitas de engenharia e critérios de aceite verificáveis.
 
+![Dashboard de produção: mapa das 48 franquias com círculos proporcionais à receita e ranking das franquias](docs/img/dashboard-mapa.jpg)
+<sub>Dashboard AI/BI em produção: franquias por receita no mapa e ranking. O painel também traz KPIs, receita diária, mix de pagamento, receita por produto e por país, e satisfação dos clientes.</sub>
+
 ---
 
 ## Destaques
@@ -40,6 +43,9 @@ flowchart LR
 ```
 
 Uma única **Lakeflow Declarative Pipeline** serverless materializa as três camadas. Os recursos (schemas, pipeline, job e dashboard) são declarados num **Databricks Asset Bundle**.
+
+![Grafo da pipeline em produção: fontes à esquerda, cinco tabelas bronze, quatro silver e seis marts gold, todas concluídas](docs/img/pipeline-medalhao.jpg)
+<sub>A pipeline em produção: fonte → bronze → silver → gold, executada pelo service principal da esteira.</sub>
 
 ### Um catálogo por ambiente
 
@@ -77,6 +83,9 @@ CONSTRAINT valid_payment_method EXPECT (payment_method IN ('visa', 'mastercard',
 - **Críticas (`DROP ROW`):** chaves, quantidade e consistência do total. A linha inválida não chega à silver.
 - **De domínio (só registro):** meio de pagamento, país e coordenadas. A linha segue, e a violação é medida a cada execução.
 
+![Painel de expectations da silver transactions em produção: 3.333 registros gravados, 0 descartados e nove regras com 0% de falha](docs/img/qualidade-expectations.jpg)
+<sub>Qualidade medida pela própria pipeline: as 9 regras da silver `transactions`, com ação, % de falha e registros reprovados.</sub>
+
 Dados sensíveis (número do cartão, email, telefone e endereço dos clientes) **ficam só na bronze**.
 
 ## Esteira CI/CD
@@ -100,6 +109,9 @@ flowchart LR
 
 A esteira autentica como um **service principal** (OAuth M2M) com privilégio mínimo: só `USE CATALOG` e `CREATE SCHEMA` em `bakehouse_prod`. Em produção, só ele escreve; pessoas recebem acesso de leitura.
 
+![Execução do GitHub Actions com os jobs regras do projeto, bundle validate + plan e bundle deploy concluídos com sucesso](docs/img/esteira-github-actions.jpg)
+<sub>A execução que publicou a produção: regras → validate + plan → deploy, este último após aprovação manual.</sub>
+
 ## Como os números foram validados
 
 Testar se o widget aparece não basta. A gold foi **reconciliada com a fonte** de forma independente:
@@ -110,6 +122,9 @@ Testar se o widget aparece não basta. A gold foi **reconciliada com a fonte** d
 | Receita somada em cada mart | diferença zero |
 | Linha a linha por dia, produto, pagamento, franquia, país e cliente | 0 divergências |
 | Avaliações por franquia e sentimento gold × silver | 0 divergências |
+
+![Resultado da consulta de reconciliação no SQL Editor: nove checagens, todas com diferença 0,00 e status OK](docs/img/reconciliacao.jpg)
+<sub>Reconciliação da gold de produção com a fonte, no SQL Editor: diferença zero em todas as checagens.</sub>
 
 Além disso:
 - as contagens das 15 tabelas são idênticas em dev e em prod;
@@ -132,6 +147,7 @@ src/
     bronze/   silver/   gold/           # um arquivo SQL por tabela
   dashboards/bakehouse_overview.lvdash.json
 .github/workflows/databricks.yml        # esteira CI/CD
+docs/img/                               # evidências usadas neste README
 pre_execucao.md                         # plano, decisões e resultados de dev e prod
 ```
 

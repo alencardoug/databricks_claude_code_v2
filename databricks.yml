@@ -15,6 +15,8 @@ include:
 sync:
   exclude:
     - pre_execucao.md
+    - README.md
+    - docs/**
 
 # O isolamento entre ambientes é feito pelo catálogo, então os schemas mantêm os nomes
 # exatos (bronze/silver/gold) também no target dev, sem o prefixo `dev_<usuario>_`
