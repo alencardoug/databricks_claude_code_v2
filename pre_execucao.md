@@ -208,5 +208,5 @@ Observações dos dados:
 
 Pendências:
 1. Grant do `service_cicd` em `bakehouse_prod`, a cargo do usuário.
-2. Conferência visual do dashboard, porque a validação acima cobre os dados, não a renderização dos widgets.
+2. ~~Conferência visual do dashboard~~ **Feita no navegador.** Os 16 widgets renderizam com os números certos (inclusive a ordenação das barras e o tooltip do mapa). Foram corrigidos dois textos cortados (altura 1 → 2) e duas tabelas com rolagem horizontal (saíram "Porte" do ranking e "Cidade" do sentimento).
 3. Commit e push para o repositório `_v2`, e depois a esteira CI/CD para prod.
