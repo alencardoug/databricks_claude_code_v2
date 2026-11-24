@@ -52,3 +52,6 @@ targets:
     permissions:
       - user_name: alencardoug@gmail.com
         level: CAN_MANAGE
+      # Identidade da esteira CI/CD (service principal service_cicd, application ID).
+      - service_principal_name: 865b4a5b-fbe2-4fe9-8a6b-93496025fd4f
+        level: CAN_MANAGE

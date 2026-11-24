@@ -207,7 +207,7 @@ Observações dos dados:
 - **Outliers de ticket médio:** Rome (Itália) tem 105,43 e Stockholm (Suécia) tem 75,20, contra 19,94 na média geral. As duas são as franquias de maior receita, cada uma sozinha no seu país.
 
 Pendências:
-1. **Grant do `service_cicd` em `bakehouse_prod`: feito com o ID errado** (verificado em 2026-11-24). O grant (`USE_CATALOG`, `CREATE_SCHEMA`) foi dado a `294b5514-…`, o Client ID da nota antiga, de um service principal que não existe mais no workspace. O `service_cicd` atual é `865b4a5b-…` e não tem nenhum privilégio. A correção fica a cargo do usuário:
+1. ✅ **Resolvido em 2026-11-24:** grant corrigido para `865b4a5b-…` (o órfão `294b5514-…` foi revogado em `bakehouse_prod` e em `workspace`), secrets do GitHub atualizados, `CAN_MANAGE` do `service_cicd` na pasta de prod e o service principal incluído no `permissions:` do target prod. Histórico: o grant tinha sido feito com o ID errado (verificado em 2026-11-24). O grant (`USE_CATALOG`, `CREATE_SCHEMA`) foi dado a `294b5514-…`, o Client ID da nota antiga, de um service principal que não existe mais no workspace. O `service_cicd` atual é `865b4a5b-…` e não tem nenhum privilégio. A correção fica a cargo do usuário:
    ```sql
    GRANT USE CATALOG, CREATE SCHEMA ON CATALOG bakehouse_prod TO `865b4a5b-fbe2-4fe9-8a6b-93496025fd4f`;
    REVOKE ALL PRIVILEGES ON CATALOG bakehouse_prod FROM `294b5514-7b0b-4761-b6a0-3b54e7860780`;
