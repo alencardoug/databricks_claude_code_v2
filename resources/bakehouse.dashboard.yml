@@ -1,0 +1,10 @@
+# Dashboard AI/BI (Lakeview) sobre os marts gold. As queries dos datasets usam só o nome
+# da tabela; catálogo e schema são injetados aqui, então o JSON não depende do ambiente.
+resources:
+  dashboards:
+    bakehouse_overview:
+      display_name: Bakehouse - Vendas e Satisfação
+      file_path: ../src/dashboards/bakehouse_overview.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${resources.schemas.gold.name}

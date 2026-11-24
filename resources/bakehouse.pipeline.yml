@@ -1,0 +1,23 @@
+# Um único Lakeflow Declarative Pipeline serverless para as três camadas.
+# Toda tabela é criada com nome totalmente qualificado montado a partir de `configuration`,
+# então o SQL nunca contém catálogo nem schema literais.
+resources:
+  pipelines:
+    bakehouse_medallion:
+      name: bakehouse_medallion
+      catalog: ${var.catalog}
+      schema: ${resources.schemas.bronze.name}
+      serverless: true
+      channel: CURRENT
+      continuous: false
+
+      root_path: ../src/pipelines/bakehouse
+      libraries:
+        - glob:
+            include: ../src/pipelines/bakehouse/transformations/**
+
+      configuration:
+        medallion_catalog: ${var.catalog}
+        bronze_schema: ${resources.schemas.bronze.name}
+        silver_schema: ${resources.schemas.silver.name}
+        gold_schema: ${resources.schemas.gold.name}

@@ -1,0 +1,19 @@
+# Um schema por camada medalhão, com o mesmo nome em todos os catálogos.
+# Estes recursos são a fonte única de verdade dos nomes dos schemas: a pipeline e o
+# dashboard referenciam ${resources.schemas.<camada>.name}.
+resources:
+  schemas:
+    bronze:
+      catalog_name: ${var.catalog}
+      name: bronze
+      comment: Bakehouse - ingestão bruta de samples.bakehouse com metadados de ingestão
+
+    silver:
+      catalog_name: ${var.catalog}
+      name: silver
+      comment: Bakehouse - dados limpos, tipados e conformados, com regras de qualidade
+
+    gold:
+      catalog_name: ${var.catalog}
+      name: gold
+      comment: Bakehouse - marts de negócio prontos para BI

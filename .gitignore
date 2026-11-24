@@ -1,0 +1,16 @@
+# Estado local do Databricks Asset Bundles
+.databricks/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Variáveis locais e segredos
+.env
+.env.*
+
+# IDEs e sistema
+.vscode/
+.idea/
+.DS_Store

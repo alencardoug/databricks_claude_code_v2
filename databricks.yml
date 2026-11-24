@@ -1,0 +1,54 @@
+# Bundle do pipeline medalhão Bakehouse (bronze -> silver -> gold) + dashboard AI/BI.
+# Documentação: https://docs.databricks.com/dev-tools/bundles/index.html
+#
+# Regra do projeto: um catálogo por ambiente. A ÚNICA coisa que muda entre dev e prod é o
+# catálogo, definido em `targets.<alvo>.variables.catalog`. Nenhum outro arquivo escreve
+# o nome do catálogo ou dos schemas: os YAMLs leem ${var.catalog} e
+# ${resources.schemas.<camada>.name}; o SQL lê ${medallion_catalog} e ${<camada>_schema}.
+# Os catálogos são administrados FORA deste bundle (não há recurso `catalogs:`).
+bundle:
+  name: databricks_claude_code_v2
+
+include:
+  - resources/*.yml
+
+sync:
+  exclude:
+    - pre_execucao.md
+
+# O isolamento entre ambientes é feito pelo catálogo, então os schemas mantêm os nomes
+# exatos (bronze/silver/gold) também no target dev, sem o prefixo `dev_<usuario>_`
+# que o `mode: development` acrescentaria.
+experimental:
+  skip_name_prefix_for_schema: true
+
+variables:
+  catalog:
+    description: Catálogo Unity Catalog do ambiente (definido em cada target)
+  warehouse_id:
+    description: SQL warehouse usado pelo dashboard AI/BI
+    lookup:
+      warehouse: Serverless Starter Warehouse
+
+targets:
+  dev:
+    # Modo desenvolvimento: recursos ganham o prefixo '[dev <usuario>]' e schedules ficam pausados.
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-249fee20-b401.cloud.databricks.com
+    variables:
+      catalog: bakehouse_dev
+
+  prod:
+    # Publicado pela esteira CI/CD, autenticada como o service principal da esteira.
+    mode: production
+    workspace:
+      host: https://dbc-249fee20-b401.cloud.databricks.com
+      # Caminho compartilhado e curto, fora da pasta de qualquer usuário.
+      root_path: /Workspace/${bundle.name}
+    variables:
+      catalog: bakehouse_prod
+    permissions:
+      - user_name: alencardoug@gmail.com
+        level: CAN_MANAGE

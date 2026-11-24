@@ -1,0 +1,12 @@
+# Job que orquestra a pipeline medalhão (bronze -> silver -> gold numa única atualização).
+# Sem agendamento: a fonte (samples.bakehouse) é estática, então a execução é sob demanda.
+resources:
+  jobs:
+    bakehouse_medallion_job:
+      name: bakehouse_medallion_job
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: refresh_medallion
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.bakehouse_medallion.id}
+            full_refresh: false
