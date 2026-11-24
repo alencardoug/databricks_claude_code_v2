@@ -1,0 +1,95 @@
+name: Databricks CI/CD
+
+# Adaptado da esteira da aula (MateusKasuya/databricks_claude_code).
+# PR para main: verificações + validate/plan de prod. Push em main: o mesmo + deploy de prod.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  # Só a IDENTIDADE vem do GitHub (service principal service_cicd, OAuth M2M).
+  # O host mora no databricks.yml, que é a fonte única de verdade.
+  DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+  DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+
+jobs:
+  # Roda em qualquer PR, inclusive de fork: não toca no Databricks e não precisa de secret.
+  checks:
+    name: regras do projeto
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A regra principal: catálogo e schema nunca aparecem escritos em src/ nem em resources/.
+      # Os nomes só podem existir nos targets do databricks.yml e no name: de resources/*.schemas.yml.
+      - name: nenhum catálogo hardcoded
+        run: |
+          if grep -rnE 'bakehouse_(dev|prod)' src resources; then
+            echo "::error::Nome de catálogo escrito em arquivo. Use \${var.catalog} (YAML) ou \${medallion_catalog} (SQL)."
+            exit 1
+          fi
+
+      # <camada>.<identificador> fora de schemas.<camada>. (a referência legítima ao recurso).
+      # Exigir o identificador depois do ponto evita falso positivo em frases como "fica na bronze."
+      - name: nenhum schema hardcoded
+        run: |
+          if grep -rnP '(?<!schemas\.)\b(bronze|silver|gold)\.[A-Za-z_]' src resources; then
+            echo "::error::Schema escrito em arquivo. Use \${resources.schemas.<camada>.name} (YAML) ou \${<camada>_schema} (SQL)."
+            exit 1
+          fi
+
+      - name: sem USE CATALOG / USE SCHEMA no SQL
+        run: |
+          if grep -rniE '^\s*USE\s+(CATALOG|SCHEMA)\b' src; then
+            echo "::error::Não use USE CATALOG/USE SCHEMA: qualifique os nomes com as variáveis do pipeline."
+            exit 1
+          fi
+
+      - name: JSON do dashboard válido
+        run: |
+          for f in src/dashboards/*.lvdash.json; do
+            jq empty "$f" && echo "ok: $f"
+          done
+
+  validate:
+    name: bundle validate + plan (prod)
+    runs-on: ubuntu-latest
+    needs: checks
+    # Secrets não ficam disponíveis em PR de fork, então só roda para PR do próprio repositório ou push.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v1.8.0
+        with:
+          # Mesma versão usada localmente: precisa de bundle plan, skip_name_prefix_for_schema e dataset_catalog.
+          version: 1.26.0
+      - run: databricks bundle validate -t prod
+      - run: databricks bundle plan -t prod
+
+  deploy:
+    name: bundle deploy (prod)
+    runs-on: ubuntu-latest
+    needs: validate
+    # Gate humano: com reviewers configurados no environment "prod", o job espera aprovação.
+    environment: prod
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Um deploy por vez: todos escrevem o mesmo estado em <root_path>/state.
+    # cancel-in-progress fica false: cancelar no meio do deploy pode deixar o lock preso.
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v1.8.0
+        with:
+          version: 1.26.0
+      - run: databricks bundle deploy -t prod
+      - name: O que foi para o workspace
+        run: databricks bundle summary -t prod
