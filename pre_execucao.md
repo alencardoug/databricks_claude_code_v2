@@ -216,3 +216,21 @@ Pendências:
    Também é preciso: `CAN_MANAGE` para o `service_cicd` na pasta `/Workspace/databricks_claude_code_v2` (hoje só `admins` acessam; criada vazia pelos `validate`/`plan` de prod); e conferir se o secret `DATABRICKS_CLIENT_ID` do GitHub contém `865b4a5b-…`. O warehouse já está liberado (`users`: `CAN_USE`).
 2. ~~Conferência visual do dashboard~~ **Feita no navegador.** Os 16 widgets renderizam com os números certos (inclusive a ordenação das barras e o tooltip do mapa). Foram corrigidos dois textos cortados (altura 1 → 2) e duas tabelas com rolagem horizontal (saíram "Porte" do ranking e "Cidade" do sentimento).
 3. ~~Commit e push~~ Feitos. **Esteira CI/CD:** `.github/workflows/databricks.yml` adaptado da aula (checks da regra de nomes → validate + plan de prod → deploy de prod), com o environment `prod` do GitHub exigindo aprovação de `alencardoug` antes do deploy.
+
+## Resultado em prod (2026-11-24)
+
+| Etapa | Resultado |
+|---|---|
+| Esteira (commit `75df803`) | `checks` ✅, `validate` + `plan` de prod ✅, deploy aprovado manualmente no environment `prod` ✅ |
+| Deploy de prod | 9 recursos criados pelo `service_cicd`: schemas `bronze`/`silver`/`gold` (owner `service_cicd`), pipeline, job e dashboard, todos com `CAN_MANAGE` para o usuário e para o `service_cicd` |
+| Job `bakehouse_medallion_job` em prod | `SUCCESS` em 82 s, rodando como `service_cicd` |
+| Leitura de prod | Os schemas pertencem ao `service_cicd`, e ser dono do catálogo não dá acesso aos dados. Foi preciso `GRANT USE SCHEMA, SELECT ON CATALOG bakehouse_prod` para o usuário (só leitura) |
+| Contagens prod × dev | 15 de 15 tabelas iguais |
+| Reconciliação gold de prod × fonte | 17 de 17 checagens com diferença zero |
+| Datasets do dashboard em `bakehouse_prod.gold` | 8 de 8 rodam; KPIs iguais aos de dev (66.471 / 3.333 / 19,94 / 48 / 9) |
+| Sentimento | Gold × silver de prod: 0 divergências. Prod × dev: 3 dos 204 reviews com rótulos diferentes (52/86/66 em prod, 50/85/69 em dev), porque `ai_analyze_sentiment` não é determinístico |
+
+Estado final:
+- dev e prod materializados e conferidos contra a fonte;
+- `service_cicd` com o mínimo de permissões (`USE CATALOG` + `CREATE SCHEMA` em `bakehouse_prod`, `CAN_MANAGE` na pasta de prod);
+- o usuário só lê prod.
